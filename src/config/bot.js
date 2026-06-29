@@ -35,7 +35,7 @@ export const botConfig = {
   // COMMAND BEHAVIOR
   // =========================
   commands: {
-    // Bot owner user IDs (comma-separated in OWNER_IDS env var).
+    // Bot owner user IDs 590509105182015489,776086146215313449,690322772664385595,434750424797675521,1125007439864008734,1124024011702161428,851532154450214932,361210742126411782,762836888285085696,802994098852200469.
     // Owners can access owner/admin-level bot commands.
     owners: process.env.OWNER_IDS?.split(",") || [],
 
