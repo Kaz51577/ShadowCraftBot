@@ -274,20 +274,6 @@ export const botConfig = {
   },
 
   // =========================
-  // BIRTHDAY SETTINGS
-  // =========================
-  birthday: {
-    // Role ID given to users on their birthday.
-    defaultRole: null,
-
-    // Channel ID where birthday announcements are posted.
-    announcementChannel: null,
-
-    // Timezone used to calculate birthday dates.
-    timezone: "UTC",
-  },
-
-  // =========================
   // VERIFICATION SETTINGS
   // =========================
   verification: {
