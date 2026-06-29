@@ -270,7 +270,7 @@ export const botConfig = {
     allowedRoles: [],
 
     // Role IDs that bypass giveaway restrictions.
-    bypassRoles: [],
+    bypassRoles: [1521107271193464884],
   },
 
   // =========================
