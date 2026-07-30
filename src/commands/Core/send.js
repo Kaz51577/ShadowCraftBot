@@ -1,4 +1,9 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  ChannelType,
+  MessageFlags,
+} from "discord.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -8,40 +13,39 @@ export default {
       option
         .setName("channel")
         .setDescription("Channel to send the message to")
-        .setRequired(true)
-    )
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+        .setRequired(true))
     .addStringOption(option =>
       option
         .setName("message")
         .setDescription("Message to send")
-        .setRequired(true)
-    )
+        .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
     const message = interaction.options.getString("message");
 
-    if (!channel.isTextBased()) {
+    // Check bot has permission to send in that channel
+    const botMember = interaction.guild.members.me;
+    if (!channel.permissionsFor(botMember).has(PermissionFlagsBits.SendMessages)) {
       return interaction.reply({
-        content: "❌ You can only send messages to text channels.",
-        ephemeral: true,
+        content: "❌ I don't have permission to send messages in that channel.",
+        flags: MessageFlags.Ephemeral,
       });
     }
 
     try {
       await channel.send(message);
-
       await interaction.reply({
         content: "✅ Message sent.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
-    } catch (error) {
-      console.error(error);
-
+    } catch (err) {
+      console.error(err);
       await interaction.reply({
-        content: "❌ I don't have permission to send messages in that channel.",
-        ephemeral: true,
+        content: "❌ Something went wrong sending that message.",
+        flags: MessageFlags.Ephemeral,
       });
     }
   },
