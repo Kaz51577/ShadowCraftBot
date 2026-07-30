@@ -1,7 +1,4 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-} from "discord.js";
+import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -11,23 +8,41 @@ export default {
       option
         .setName("channel")
         .setDescription("Channel to send the message to")
-        .setRequired(true))
+        .setRequired(true)
+    )
     .addStringOption(option =>
       option
         .setName("message")
         .setDescription("Message to send")
-        .setRequired(true))
+        .setRequired(true)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
   async execute(interaction) {
     const channel = interaction.options.getChannel("channel");
     const message = interaction.options.getString("message");
 
-    await channel.send(message);
+    if (!channel.isTextBased()) {
+      return interaction.reply({
+        content: "❌ That channel is not a text channel.",
+        ephemeral: true,
+      });
+    }
 
-    await interaction.reply({
-      content: "✅ Message sent.",
-      ephemeral: true,
-    });
+    try {
+      await channel.send(message);
+
+      await interaction.reply({
+        content: "✅ Message sent.",
+        ephemeral: true,
+      });
+    } catch (error) {
+      console.error(error);
+
+      await interaction.reply({
+        content: "❌ I don't have permission to send messages there.",
+        ephemeral: true,
+      });
+    }
   },
 };
