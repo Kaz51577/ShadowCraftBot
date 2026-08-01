@@ -1,50 +1,51 @@
-import {
-  SlashCommandBuilder,
-  PermissionFlagsBits,
-  ChannelType,
-  ActionRowBuilder,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
-  MessageFlags,
-} from "discord.js";
+import { MessageFlags, PermissionFlagsBits } from 'discord.js';
+import { logger } from '../../utils/logger.js';
 
 export default {
-  data: new SlashCommandBuilder()
-    .setName("send")
-    .setDescription("Send a message as the bot")
-    .addChannelOption(option =>
-      option
-        .setName("channel")
-        .setDescription("Channel to send the message to")
-        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-        .setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+  name: 'send_modal',
 
-  async execute(interaction) {
-    const channel = interaction.options.getChannel("channel");
+  async execute(interaction, client, args) {
+    const [channelId] = args;
+    const message = interaction.fields.getTextInputValue('message');
 
-    const botMember = interaction.guild.members.me;
-    if (!channel.permissionsFor(botMember).has(PermissionFlagsBits.SendMessages)) {
+    const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+
+    if (!channel) {
       return interaction.reply({
-        content: "❌ I don't have permission to send messages in that channel.",
+        content: "❌ Couldn't find that channel anymore.",
         flags: MessageFlags.Ephemeral,
       });
     }
 
-    const modal = new ModalBuilder()
-      .setCustomId(`send_modal:${channel.id}`)
-      .setTitle("Compose message");
+    const wantsEveryonePing = /@everyone|@here/.test(message);
+    const botMember = interaction.guild.members.me;
 
-    const messageInput = new TextInputBuilder()
-      .setCustomId("message")
-      .setLabel("Message")
-      .setStyle(TextInputStyle.Paragraph)
-      .setRequired(true)
-      .setMaxLength(2000);
+    if (wantsEveryonePing && !channel.permissionsFor(botMember).has(PermissionFlagsBits.MentionEveryone)) {
+      return interaction.reply({
+        content: "❌ I don't have permission to ping @everyone/@here in that channel.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
 
-    modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
-
-    await interaction.showModal(modal);
+    try {
+      await channel.send({
+        content: message,
+        allowedMentions: { parse: ['users', 'roles', 'everyone'] },
+      });
+      await interaction.reply({
+        content: '✅ Message sent.',
+        flags: MessageFlags.Ephemeral,
+      });
+    } catch (error) {
+      logger.error('send_modal: failed to send message', {
+        error: error.message,
+        guildId: interaction.guildId,
+        channelId,
+      });
+      await interaction.reply({
+        content: '❌ Something went wrong sending that message.',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
   },
 };
