@@ -33,7 +33,7 @@ export default {
     }
 
     const modal = new ModalBuilder()
-      .setCustomId(`send-modal-${channel.id}`)
+      .setCustomId(`send_modal:${channel.id}`)
       .setTitle("Compose message");
 
     const messageInput = new TextInputBuilder()
