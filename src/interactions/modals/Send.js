@@ -1,38 +1,50 @@
-import { MessageFlags } from 'discord.js';
-import { logger } from '../../utils/logger.js';
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  ChannelType,
+  ActionRowBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  MessageFlags,
+} from "discord.js";
 
 export default {
-  name: 'send_modal',
+  data: new SlashCommandBuilder()
+    .setName("send")
+    .setDescription("Send a message as the bot")
+    .addChannelOption(option =>
+      option
+        .setName("channel")
+        .setDescription("Channel to send the message to")
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+        .setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
-  async execute(interaction, client, args) {
-    const [channelId] = args;
-    const message = interaction.fields.getTextInputValue('message');
+  async execute(interaction) {
+    const channel = interaction.options.getChannel("channel");
 
-    const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
-
-    if (!channel) {
+    const botMember = interaction.guild.members.me;
+    if (!channel.permissionsFor(botMember).has(PermissionFlagsBits.SendMessages)) {
       return interaction.reply({
-        content: "❌ Couldn't find that channel anymore.",
+        content: "❌ I don't have permission to send messages in that channel.",
         flags: MessageFlags.Ephemeral,
       });
     }
 
-    try {
-      await channel.send(message);
-      await interaction.reply({
-        content: '✅ Message sent.',
-        flags: MessageFlags.Ephemeral,
-      });
-    } catch (error) {
-      logger.error('send_modal: failed to send message', {
-        error: error.message,
-        guildId: interaction.guildId,
-        channelId,
-      });
-      await interaction.reply({
-        content: '❌ Something went wrong sending that message.',
-        flags: MessageFlags.Ephemeral,
-      });
-    }
+    const modal = new ModalBuilder()
+      .setCustomId(`send_modal:${channel.id}`)
+      .setTitle("Compose message");
+
+    const messageInput = new TextInputBuilder()
+      .setCustomId("message")
+      .setLabel("Message")
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setMaxLength(2000);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
+
+    await interaction.showModal(modal);
   },
 };
