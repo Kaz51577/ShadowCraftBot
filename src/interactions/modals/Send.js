@@ -1,4 +1,4 @@
-import { MessageFlags } from 'discord.js';
+import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 
 export default {
@@ -17,8 +17,21 @@ export default {
       });
     }
 
+    const wantsEveryonePing = /@everyone|@here/.test(message);
+    const botMember = interaction.guild.members.me;
+
+    if (wantsEveryonePing && !channel.permissionsFor(botMember).has(PermissionFlagsBits.MentionEveryone)) {
+      return interaction.reply({
+        content: "❌ I don't have permission to ping @everyone/@here in that channel.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
     try {
-      await channel.send(message);
+      await channel.send({
+        content: message,
+        allowedMentions: { parse: ['users', 'roles', 'everyone'] },
+      });
       await interaction.reply({
         content: '✅ Message sent.',
         flags: MessageFlags.Ephemeral,
